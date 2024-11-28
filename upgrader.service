@@ -1,0 +1,13 @@
+[Unit]
+Description=upgrader service
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+Restart=no
+Environment="LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/css/bin/4-Station-TT/ros-ui/bin/release/lib:/opt/ros/noetic/lib"
+ExecStart=/home/css/bin/4-Station-TT/ros-ui/bin/release/upgrades/installer/upgrader
+WorkingDirectory=/home/css/bin/4-Station-TT/ros-ui/bin/release/upgrades/installer
+
+[Install]
+WantedBy=graphical.target
