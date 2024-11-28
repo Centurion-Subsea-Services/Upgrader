@@ -1,19 +1,52 @@
-## ROSCore Demo 
-A demo project to make a simple service that uses the ROSCore code base. 
+## Upgrader
+A project to make a simple service that upgrades ROS-UI based applications. 
 
-## What does this service do?
-It will repeat publish values that have been configured in the an INI file. These values can be of Bool(0), Int32(1), Long(2), Float32(3), String(4), types supported by the ROSBoard. Also it will listen to a topic and if the there is an update to one of the values, or add a value then the publishing will change to that value. 
+## What does this application do?
+It is intendend to upgrade an application. To do this it reads a configuration file upgrader.conf, which is stored alongside the executable file. 
+The configuration file contains a series of commands that execute the upgrade.
 
 ## Configuration 
-[VALUE.0]
-name = value_0
-type = 0
-value = 1
-[VALUE.1]
-name = value_1
-type = 1
-value = 123
+In this simple example:
+-task 0 runs the close application script. 
+-task 1 runs the close launcher appliction script. (these need to run to unlock the ros-ui application file) 
+-task 2 waits 2 seconds to allow the scripts to complete
+-task 3 copies the new application file over the old application file
+-task 4 restarts the launcher
 
-These are repeating blocks until there are no more. Type is the data type Bool(0), Int32(1), Long(2), Float32(3), String(4), value is the initial value. The name parameter sets the ros topic name so if the base is /demo then 'value_0' would be published on /demo/value_0 and its subscriber is on /demo/value_0/set. 
+[TASK.0]
+action = run_systemctl
+param_1 = --user
+param_2 = stop
+param_3 = ros-ui.service
 
+[TASK.1]
+action = run_systemctl
+param_1 = --user
+param_2 = stop 
+param_3 = ros-ui-launcher.service
+
+[TASK.2]
+action = sleep
+seconds = 2
+
+[TASK.3]
+action = file_move_exec
+file_name = ros-ui
+
+[TASK.4]
+action = run_systemctl
+param_1 = --user
+param_2 = start 
+param_3 = ros-ui-launcher.service
+
+## Availble Actions
+- file_move (Copy file to application directory)
+- file_move_exec (Copy file to application directory, and make it executable)
+- file_delete (Delete a file in the applciation directory)
+- dir_create (Create a new directory)
+- add_config (Add a new application configuration file change)
+- update_config (Update a application configuration file)
+- run_script (Run a shell script) 
+- run_systemctl (Run and systemctl function) 
+- sleep (Wait for a number of seconds)
 
