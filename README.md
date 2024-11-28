@@ -50,3 +50,14 @@ param_3 = ros-ui-launcher.service
 - run_systemctl (Run and systemctl function) 
 - sleep (Wait for a number of seconds)
 
+# Making an installer 
+This is a fairly simple task, of placing the upgrader application and the configured upgrader.conf file in a ZIP file with all the supporting files all at the root of the ZIP file. 
+
+Rename the ZIP file to replace the extension .zip to .upg, so the application will know that this is a upgrade file.
+
+For example with a simple executable replacement the files would look like:
+- ros-ui (the replacement file)
+- upgrader (the upgrader executable)
+- upgrader.conf (the upgrade configuration file)
+
+
