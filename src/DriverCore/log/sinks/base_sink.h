@@ -11,10 +11,10 @@
 //
 #include <mutex>
 
-#include "common.h"
-#include "sinks/sink.h"
-#include "formatter.h"
-#include "details/log_msg.h"
+#include "../common.h"
+#include "sink.h"
+#include "../formatter.h"
+#include "../details/log_msg.h"
 
 namespace spdlog
 {

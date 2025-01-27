@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "sinks/base_sink.h"
-#include "common.h"
-#include "details/os.h"
+#include "base_sink.h"
+#include "../common.h"
+#include "../details/os.h"
 
 #include <string>
 #include <map>

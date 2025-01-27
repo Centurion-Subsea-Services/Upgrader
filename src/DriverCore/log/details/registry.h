@@ -10,10 +10,10 @@
 // If user requests a non existing logger, nullptr will be returned
 // This class is thread safe
 
-#include "details/null_mutex.h"
-#include "logger.h"
-#include "async_logger.h"
-#include "common.h"
+#include "null_mutex.h"
+#include "../logger.h"
+#include "../async_logger.h"
+#include "../common.h"
 
 #include <chrono>
 #include <functional>

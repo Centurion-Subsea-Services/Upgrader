@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "details/null_mutex.h"
-#include "sinks/base_sink.h"
+#include "../alloca.h"
+#include "base_sink.h"
 
 #include <cstdio>
 #include <memory>
