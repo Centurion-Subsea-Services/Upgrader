@@ -42,7 +42,7 @@ param_3 = ros-ui-launcher.service
 ## Availble Actions
 - file_move (Copy file to application directory)
 - file_move_exec (Copy file to application directory, and make it executable)
-- file_delete (Delete a file in the applciation directory)
+- file_delete (Delete a file in the application directory, this has an optional parameter, file_directory if this is not used then points to the application dir)
 - dir_create (Create a new directory)
 - add_config (Add a new application configuration file change)
 - update_config (Update a application configuration file)
