@@ -9,7 +9,7 @@
 #include "main.h"
 
 #define LOG_NAME "client"
-#define VERSION "1.0"
+#define VERSION "1.1"
 #define REQUIRED_CMD_PARMS 2
 
 namespace fs = std::filesystem;
@@ -99,9 +99,16 @@ int main (int argc, char **argv) {
 			// If this is a file delete task
 			try {
 				std::string fileName = iniFile.Get<std::string>(task, "file_name", "");
+				std::string deleteDir = iniFile.Get<std::string>(task, "file_directory", "");
+				logger->info("CMD Delete file: {}:{}", fileName, deleteDir);
 				fs::path sourceFile = fileName;
-				fs::path destinationDir = "../../";
-				fs::path destinationFile = destinationDir / sourceFile.filename();
+				fs::path deleteDirPath;
+				if (!deleteDir.empty()) {
+					deleteDirPath = deleteDir;
+				} else {
+					deleteDirPath = "../../";
+				}
+				fs::path destinationFile = deleteDirPath / sourceFile.filename();
 
 		        // Delete the file in the parent directory
 				if (fs::exists(destinationFile)) {
