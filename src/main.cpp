@@ -71,9 +71,18 @@ int main (int argc, char **argv) {
 			try {
 				std::string fileName = iniFile.Get<std::string>(task, "file_name", "");
 				fs::path sourceFile = dataDir + fileName;
-				fs::path destinationDir = "../../";
+				std::string fileDir = iniFile.Get<std::string>(task, "file_directory", "");
+
+				logger->info("CMD move file: {}:{}", fileName, fileDir);
+				fs::path moveDirPath;
+				if (!fileDir.empty()) {
+					moveDirPath = fileDir;
+				} else {
+					moveDirPath = "../../";
+				}
+				// Create new file path
+				fs::path destinationFile = moveDirPath / fileName;
 				// Copy the file
-				fs::path destinationFile = destinationDir / sourceFile.filename();
 				fs::copy_file(sourceFile, destinationFile, fs::copy_options::overwrite_existing);
 				logger->info("Copied file: {}", fileName);
 			} catch (const fs::filesystem_error& e) {
@@ -84,14 +93,21 @@ int main (int argc, char **argv) {
 			try {
 				std::string fileName = iniFile.Get<std::string>(task, "file_name", "");
 				fs::path sourceFile = dataDir + fileName;
-				fs::path destinationDir = "../../";
-				// Copy the file
-				fs::path destinationFile = destinationDir / sourceFile.filename();
+				std::string fileDir = iniFile.Get<std::string>(task, "file_directory", "");
+				logger->info("CMD move EXE file: {}:{}", fileName, fileDir);
+				fs::path moveDirPath;
+				if (!fileDir.empty()) {
+					moveDirPath = fileDir;
+				} else {
+					moveDirPath = "../../";
+				}
+				// Create new file path
+				fs::path destinationFile = moveDirPath / fileName;
 				fs::copy_file(sourceFile, destinationFile, fs::copy_options::overwrite_existing);
 				// Add execute permission for the owner
 			    fs::permissions(destinationFile, fs::perms::owner_exec, fs::perm_options::add);
 
-				logger->info("Copied file: {}", fileName);
+				logger->info("Copied EXE file: {}", fileName);
 			} catch (const fs::filesystem_error& e) {
 				logger->critical("Error in file copy: {} ", e.what());
 			}
