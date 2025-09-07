@@ -53,3 +53,7 @@ compile_commands.json
 *_qmlcache.qrc
 
 build/
+
+pdu17/PDU 1.7/pdu_cb_upgrade_1_7/
+
+pdu17/PDU 1.7/pdu_pc_upgrade_1_7/

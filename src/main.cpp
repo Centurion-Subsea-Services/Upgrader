@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <filesystem>
+#include <sqlite3.h>
 
 #include "DriverCore/ini/ini.h"
 #include "main.h"
@@ -13,6 +14,67 @@
 #define REQUIRED_CMD_PARMS 2
 
 namespace fs = std::filesystem;
+
+
+/**
+ * insertConfig Insert into the database configuration database a value
+ */
+bool insertConfig(const std::string& dbfile, const std::string& key, const std::string& value, int type) {
+    sqlite3* db;
+    char* errMsg = nullptr;
+
+    // Open (or create) the database
+    if (sqlite3_open(dbfile.c_str(), &db) != SQLITE_OK) {
+        std::cerr << "Error opening database: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+
+    // Begin transaction
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, &errMsg) != SQLITE_OK) {
+        std::cerr << "Error beginning transaction: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+        sqlite3_close(db);
+        return false;
+    }
+
+    // Prepare insert SQL
+    const char* insertSQL = "INSERT OR REPLACE INTO config (key, value, type) VALUES (?, ?, ?);";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, insertSQL, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Error preparing statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return false;
+    }
+
+    // Bind parameters
+    sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, value.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, type);
+
+    // Execute
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        std::cerr << "Error inserting data: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        sqlite3_exec(db, "ROLLBACK;", nullptr, nullptr, nullptr);
+        sqlite3_close(db);
+        return false;
+    }
+
+    sqlite3_finalize(stmt);
+
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &errMsg) != SQLITE_OK) {
+        std::cerr << "Error committing transaction: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+        sqlite3_exec(db, "ROLLBACK;", nullptr, nullptr, nullptr);
+        sqlite3_close(db);
+        return false;
+    }
+
+    sqlite3_close(db);
+    return true;
+}
+
 
 /**
  * The entry point of the application 
@@ -257,7 +319,22 @@ int main (int argc, char **argv) {
 			} catch (const std::runtime_error& e) {
 				logger->critical("Error in config file update: {} ", e.what());
 			}
-		}
+		} else if (0 == action.compare("config")) {
+			// If this is a run script task
+			try {
+				int seconds = iniFile.Get<int>(task, "seconds", 5);
+				std::string targetName = iniFile.Get<std::string>(task, "target_name", "");
+				std::string targetValue = iniFile.Get<std::string>(task, "target_value", "");
+				logger->info("CMD config update: {}:{}", targetName, targetValue);
+				fs::path moveDirPath;
+				moveDirPath = "../../channeldata.sqlite";
+
+				// update the database
+				insertConfig(moveDirPath, targetName, targetValue, 0);
+			} catch (const std::runtime_error& e) {
+				logger->critical("Error in config file update: {} ", e.what());
+			}
+		} 
 	}
 	logger->warn("Warn: exit because hit maximum action count {}", ACTION_COUNT);
 	return 0;

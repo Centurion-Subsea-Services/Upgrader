@@ -1,4 +1,4 @@
-LDFLAGS = $(shell pkg-config) -lm -lstdc++ -pthread
+LDFLAGS = $(shell pkg-config) -lm -lstdc++ -pthread -lsqlite3
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall
 
