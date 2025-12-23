@@ -1,6 +1,8 @@
-LDFLAGS = $(shell pkg-config) -lm -lstdc++ -pthread -lsqlite3
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall
+CXXFLAGS = -std=c++17 -Wall -pthread \
+           $(shell pkg-config --cflags redis++ hiredis)
+LDFLAGS  = $(shell pkg-config --libs redis++ hiredis)
+
 
 TARGET_EXEC ?= upgrader
 

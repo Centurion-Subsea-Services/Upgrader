@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
 #include <unistd.h>
 #include <iostream>
 #include <filesystem>
-#include <sqlite3.h>
+#include <sw/redis++/redis++.h>
 
 #include "DriverCore/ini/ini.h"
 #include "main.h"
@@ -14,65 +15,34 @@
 #define REQUIRED_CMD_PARMS 2
 
 namespace fs = std::filesystem;
-
+using namespace sw::redis;
 
 /**
  * insertConfig Insert into the database configuration database a value
  */
 bool insertConfig(const std::string& dbfile, const std::string& key, const std::string& value, int type) {
-    sqlite3* db;
-    char* errMsg = nullptr;
+    // Connect to the redis database
+    Redis* redis = new Redis(dbfile);
 
-    // Open (or create) the database
-    if (sqlite3_open(dbfile.c_str(), &db) != SQLITE_OK) {
-        std::cerr << "Error opening database: " << sqlite3_errmsg(db) << std::endl;
+    // If the redis database was not connected then report the failure
+    if (nullptr == redis) {
+        std::cerr << "Error opening database: " << dbfile << std::endl;
         return false;
-    }
+    } 
+	// Save the data to the redis database
+	if (redis->set(key, value)) {
+		// Create a json string and publish the update to any listening 
+		std::ostringstream oss;
+		oss << "({\"key\":\"" << key
+			<< "\",\"value\":\"" << value
+			<< "\"})";
 
-    // Begin transaction
-    if (sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, &errMsg) != SQLITE_OK) {
-        std::cerr << "Error beginning transaction: " << errMsg << std::endl;
-        sqlite3_free(errMsg);
-        sqlite3_close(db);
+		redis->publish("vp_redis", oss.str());
+		return true;
+	} else {
+        std::cerr << "Error writting to database: " << dbfile << ":" << key << std::endl;
         return false;
-    }
-
-    // Prepare insert SQL
-    const char* insertSQL = "INSERT OR REPLACE INTO config (key, value, type) VALUES (?, ?, ?);";
-    sqlite3_stmt* stmt;
-    if (sqlite3_prepare_v2(db, insertSQL, -1, &stmt, nullptr) != SQLITE_OK) {
-        std::cerr << "Error preparing statement: " << sqlite3_errmsg(db) << std::endl;
-        sqlite3_close(db);
-        return false;
-    }
-
-    // Bind parameters
-    sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, value.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 3, type);
-
-    // Execute
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        std::cerr << "Error inserting data: " << sqlite3_errmsg(db) << std::endl;
-        sqlite3_finalize(stmt);
-        sqlite3_exec(db, "ROLLBACK;", nullptr, nullptr, nullptr);
-        sqlite3_close(db);
-        return false;
-    }
-
-    sqlite3_finalize(stmt);
-
-    // Commit transaction
-    if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &errMsg) != SQLITE_OK) {
-        std::cerr << "Error committing transaction: " << errMsg << std::endl;
-        sqlite3_free(errMsg);
-        sqlite3_exec(db, "ROLLBACK;", nullptr, nullptr, nullptr);
-        sqlite3_close(db);
-        return false;
-    }
-
-    sqlite3_close(db);
-    return true;
+	}
 }
 
 
@@ -322,15 +292,13 @@ int main (int argc, char **argv) {
 		} else if (0 == action.compare("config")) {
 			// If this is a run script task
 			try {
-				int seconds = iniFile.Get<int>(task, "seconds", 5);
 				std::string targetName = iniFile.Get<std::string>(task, "target_name", "");
 				std::string targetValue = iniFile.Get<std::string>(task, "target_value", "");
+				std::string database = iniFile.Get<std::string>(task, "target_db", "");
 				logger->info("CMD config update: {}:{}", targetName, targetValue);
-				fs::path moveDirPath;
-				moveDirPath = "../../channeldata.sqlite";
 
 				// update the database
-				insertConfig(moveDirPath, targetName, targetValue, 0);
+				insertConfig(database, targetName, targetValue, 0);
 			} catch (const std::runtime_error& e) {
 				logger->critical("Error in config file update: {} ", e.what());
 			}
