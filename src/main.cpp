@@ -11,7 +11,7 @@
 #include "main.h"
 
 #define LOG_NAME "client"
-#define VERSION "1.2"
+#define VERSION "1.3"
 #define REQUIRED_CMD_PARMS 2
 
 namespace fs = std::filesystem;
